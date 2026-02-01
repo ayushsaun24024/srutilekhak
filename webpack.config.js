@@ -43,7 +43,8 @@ module.exports = (env) => {
         patterns: [
           { from: 'public/manifest.json', to: 'manifest.json' },
           { from: 'public/icons', to: 'icons' },
-          { from: `config/config.${env.environment}.json`, to: 'config.json' }
+          { from: `config/config.${env.environment}.json`, to: 'config.json' },
+          { from: 'src/popup/popup.html', to: 'popup/popup.html' }  // ← ADD THIS
         ]
       }),
       ...(isProd || isStaging ? [

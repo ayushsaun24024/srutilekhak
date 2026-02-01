@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "models": {
+    "en": {
+      "name": "English",
+      "url": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/moonshine-tiny-en.onnx",
+      "size": 45000000,
+      "version": "1.0.0"
+    }
+  }
+}
