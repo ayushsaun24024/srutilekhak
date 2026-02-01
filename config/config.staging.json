@@ -1,0 +1,7 @@
+{
+  "environment": "staging",
+  "modelBaseUrl": "https://huggingface.co/yourname/srutilekhak-models/resolve/main",
+  "debug": true,
+  "analytics": true,
+  "errorReporting": true
+}

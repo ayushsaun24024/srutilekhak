@@ -1,0 +1,31 @@
+{
+  "name": "srutilekhak",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack --env environment=dev --watch",
+    "build:dev": "webpack --env environment=dev",
+    "build:staging": "webpack --env environment=staging",
+    "build:prod": "webpack --env environment=production",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "babel-loader": "^10.0.0",
+    "copy-webpack-plugin": "^13.0.1",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1",
+    "zip-webpack-plugin": "^4.0.3"
+  },
+  "dependencies": {
+    "onnxruntime-web": "^1.23.2"
+  }
+}
