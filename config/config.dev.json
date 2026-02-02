@@ -1,6 +1,6 @@
 {
   "environment": "dev",
-  "modelBaseUrl": "http://localhost:8000/models",
+  "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
   "debug": true,
   "analytics": false,
   "errorReporting": false

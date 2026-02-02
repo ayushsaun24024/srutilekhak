@@ -3,8 +3,13 @@
   "models": {
     "en": {
       "name": "English",
-      "url": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/moonshine-tiny-en.onnx",
-      "size": 45000000,
+      "files": {
+        "preprocess": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/preprocess.onnx",
+        "encode": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/encode.onnx",
+        "cached_decode": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/cached_decode.onnx",
+        "uncached_decode": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/uncached_decode.onnx"
+      },
+      "size": 285000000,
       "version": "1.0.0"
     }
   }

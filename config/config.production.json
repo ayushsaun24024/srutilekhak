@@ -1,6 +1,6 @@
 {
   "environment": "production",
-  "modelBaseUrl": "https://huggingface.co/yourname/srutilekhak-models/resolve/main",
+  "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
   "debug": false,
   "analytics": true,
   "errorReporting": true

@@ -4,3 +4,7 @@ dist/
 .env
 .DS_Store
 *.log
+
+moonshine-downloaded/
+download_model.py
+upload_models.py
