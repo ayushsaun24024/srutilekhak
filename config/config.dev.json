@@ -1,5 +1,6 @@
 {
-  "environment": "dev",
+  "environment": "development",
+  "name_prefix": "[DEV] ",
   "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
   "debug": true,
   "analytics": false,

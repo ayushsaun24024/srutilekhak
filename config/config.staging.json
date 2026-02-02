@@ -1,5 +1,6 @@
 {
   "environment": "staging",
+  "name_prefix": "[STG] ",
   "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
   "debug": true,
   "analytics": true,

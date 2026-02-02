@@ -1,6 +1,7 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const ZipPlugin = require('zip-webpack-plugin');
+const fs = require('fs');
 
 module.exports = (env) => {
   const isDev = env.environment === 'dev';
@@ -50,6 +51,25 @@ module.exports = (env) => {
           { from: 'src/offscreen/offscreen.html', to: 'offscreen/offscreen.html' },
         ]
       }),
+      
+      // Update manifest with environment prefix
+      new (class {
+        apply(compiler) {
+          compiler.hooks.afterEmit.tap('UpdateManifest', () => {
+            const manifestPath = path.resolve(__dirname, 'dist/manifest.json');
+            const configPath = path.resolve(__dirname, `config/config.${env.environment}.json`);
+            
+            const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            
+            manifest.name = `${config.name_prefix}${manifest.name}`;
+            
+            fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+            console.log(`✓ Manifest updated: ${manifest.name}`);
+          });
+        }
+      })(),
+      
       ...(isProd || isStaging ? [
         new ZipPlugin({
           filename: `srutilekhak-${env.environment}-${require('./package.json').version}.zip`

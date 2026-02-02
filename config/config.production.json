@@ -1,5 +1,6 @@
 {
   "environment": "production",
+  "name_prefix": "",
   "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
   "debug": false,
   "analytics": true,
