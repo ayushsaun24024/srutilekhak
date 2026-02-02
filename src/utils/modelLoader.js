@@ -1,0 +1,70 @@
+// Model loader utility for Śrutilekhak
+class ModelLoader {
+  constructor() {
+    this.models = {};
+    this.manifest = null;
+  }
+
+  // Load model manifest from extension
+  async loadManifest() {
+    try {
+      const response = await fetch(chrome.runtime.getURL('models/manifest.json'));
+      this.manifest = await response.json();
+      console.log('Manifest loaded:', this.manifest);
+      return this.manifest;
+    } catch (error) {
+      console.error('Failed to load manifest:', error);
+      throw error;
+    }
+  }
+
+  // Check if model is already downloaded
+  async isModelDownloaded(language) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([`model_${language}`], (result) => {
+        resolve(!!result[`model_${language}`]);
+      });
+    });
+  }
+
+  // Download model from HuggingFace
+  async downloadModel(language, onProgress) {
+    if (!this.manifest) {
+      await this.loadManifest();
+    }
+
+    const modelInfo = this.manifest.models[language];
+    if (!modelInfo) {
+      throw new Error(`Model for language ${language} not found`);
+    }
+
+    console.log(`Downloading model for ${language}...`);
+    
+    // For now, just store the URLs (we'll download actual files later)
+    await chrome.storage.local.set({
+      [`model_${language}`]: {
+        urls: modelInfo.files,
+        version: modelInfo.version,
+        size: modelInfo.size,
+        downloadedAt: Date.now()
+      }
+    });
+
+    console.log(`Model ${language} metadata saved`);
+    return true;
+  }
+
+  // Get model info from storage
+  async getModel(language) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([`model_${language}`], (result) => {
+        resolve(result[`model_${language}`] || null);
+      });
+    });
+  }
+}
+
+// Export for use in other files
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ModelLoader;
+}

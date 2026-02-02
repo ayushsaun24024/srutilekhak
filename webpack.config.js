@@ -14,7 +14,8 @@ module.exports = (env) => {
     entry: {
       popup: './src/popup/popup.js',
       background: './src/background/background.js',
-      content: './src/content/content.js'
+      content: './src/content/content.js',
+      offscreen: './src/offscreen/offscreen.js',
     },
     
     output: {
@@ -44,7 +45,9 @@ module.exports = (env) => {
           { from: 'public/manifest.json', to: 'manifest.json' },
           { from: 'public/icons', to: 'icons' },
           { from: `config/config.${env.environment}.json`, to: 'config.json' },
-          { from: 'src/popup/popup.html', to: 'popup/popup.html' }  // ← ADD THIS
+          { from: 'src/popup/popup.html', to: 'popup/popup.html' },
+          { from: 'models/manifest.json', to: 'models/manifest.json' },
+          { from: 'src/offscreen/offscreen.html', to: 'offscreen/offscreen.html' },
         ]
       }),
       ...(isProd || isStaging ? [
