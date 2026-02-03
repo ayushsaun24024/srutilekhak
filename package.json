@@ -6,7 +6,7 @@
     "dev": "webpack --env environment=dev --watch",
     "build:dev": "webpack --env environment=dev",
     "build:staging": "webpack --env environment=staging",
-    "build:prod": "webpack --env environment=production",
+    "build:production": "webpack --env environment=production",
     "lint": "eslint src/",
     "format": "prettier --write src/"
   },
