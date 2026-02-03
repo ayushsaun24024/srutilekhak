@@ -43,6 +43,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'processAudioBlob') {
+    handleProcessAudioBlob(message, sendResponse);
+    return true;
+  }
   
   return false;
 });
@@ -68,42 +72,38 @@ async function handleStartTranscription(message, sendResponse) {
     chrome.runtime.sendMessage({
       action: 'loadModel',
       language: message.language
-    }, (response) => {
+    }, async (response) => {
       if (!response || !response.success) {
         sendResponse({ success: false, error: 'Failed to load model' });
         return;
       }
       
-      console.log('Model loaded in offscreen');
-      chrome.storage.local.set({ activeTabId: message.tabId });
+      console.log('Model loaded, capturing tab audio...');
       
-      let counter = 0;
-      const intervalId = setInterval(() => {
-        counter++;
-        console.log(`Requesting transcription ${counter}...`);
+      // Get stream ID for tab audio capture
+      chrome.tabCapture.getMediaStreamId({ targetTabId: message.tabId }, (streamId) => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+          return;
+        }
         
+        // Tell offscreen to start capturing audio
         chrome.runtime.sendMessage({
-          action: 'transcribeAudio',
-          audioData: null
-        }, (transcribeResponse) => {
-          console.log('Transcription response:', transcribeResponse);
-          
-          if (transcribeResponse && transcribeResponse.success) {
-            console.log(`Sending to tab ${message.tabId}:`, transcribeResponse.text);
-            
-            chrome.tabs.sendMessage(message.tabId, {
-              action: 'displayTranscription',
-              text: `[${counter}] ${transcribeResponse.text}`
-            }).catch((err) => {
-              console.error('Failed to send to tab:', err);
-              clearInterval(intervalId);
+          action: 'startAudioCapture',
+          streamId: streamId
+        }, (captureResponse) => {
+          if (captureResponse && captureResponse.success) {
+            console.log('Audio capture started');
+            chrome.storage.local.set({ 
+              activeTabId: message.tabId,
+              isTranscribing: true 
             });
+            sendResponse({ success: true });
+          } else {
+            sendResponse({ success: false, error: 'Failed to start audio capture' });
           }
         });
-      }, 5000);
-      
-      chrome.storage.local.set({ transcriptionInterval: intervalId });
-      sendResponse({ success: true });
+      });
     });
     
   } catch (error) {
@@ -154,16 +154,51 @@ async function handleTranscribeAudio(message, sendResponse) {
 
 async function handleStopTranscription(message, sendResponse) {
   try {
-    const result = await chrome.storage.local.get(['transcriptionInterval']);
-    if (result.transcriptionInterval) {
-      clearInterval(result.transcriptionInterval);
-      chrome.storage.local.remove(['transcriptionInterval', 'activeTabId']);
-    }
-    
-    console.log('Transcription stopped');
-    sendResponse({ success: true });
+    // Stop audio capture in offscreen
+    chrome.runtime.sendMessage({
+      action: 'stopAudioCapture'
+    }, (response) => {
+      chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+      console.log('Transcription stopped');
+      sendResponse({ success: true });
+    });
   } catch (error) {
     sendResponse({ success: false, error: error.message });
   }
 }
 
+async function handleProcessAudioBlob(message, sendResponse) {
+  try {
+    const { activeTabId } = await chrome.storage.local.get(['activeTabId']);
+    
+    if (!activeTabId) {
+      sendResponse({ success: false });
+      return;
+    }
+    
+    console.log('Processing audio blob...');
+    
+    // Send to offscreen for transcription
+    chrome.runtime.sendMessage({
+      action: 'transcribeAudio',
+      audioData: message.audioData
+    }, (transcribeResponse) => {
+      if (transcribeResponse && transcribeResponse.success) {
+        // Send transcription to content script
+        chrome.tabs.sendMessage(activeTabId, {
+          action: 'displayTranscription',
+          text: transcribeResponse.text
+        }).then(() => {
+          console.log('Transcription sent to tab');
+        }).catch((err) => {
+          console.log('Tab not ready, content script not loaded');
+        });
+      }
+    });
+    
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Process audio error:', error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
