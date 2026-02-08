@@ -1,8 +1,12 @@
 console.log('Śrutilekhak content script loaded');
 
-// Listen for transcription results
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Content script received message:', message.action);
+  
+  if (message.action === 'ping') {
+    sendResponse({ success: true });
+    return true;
+  }
   
   if (message.action === 'displayTranscription') {
     displayText(message.text);
