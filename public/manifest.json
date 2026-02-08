@@ -5,14 +5,15 @@
   "description": "Local, privacy-first audio transcription for any browser tab",
   
   "permissions": [
-    "tabCapture",
     "storage",
-    "downloads",
-    "offscreen"
+    "tabCapture",
+    "offscreen",
+    "activeTab",
+    "scripting"
   ],
   
   "host_permissions": [
-    "https://huggingface.co/*"
+    "<all_urls>"
   ],
 
   "content_security_policy": {
@@ -36,7 +37,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content/content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ],
   
