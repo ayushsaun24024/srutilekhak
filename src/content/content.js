@@ -1,6 +1,18 @@
 console.log('Śrutilekhak content script loaded');
 
 let overlay = null;
+let currentSettings = {
+  fontSize: 16,
+  fontFamily: 'Arial, sans-serif',
+  bgOpacity: 85,
+  position: 'bottom-left'
+};
+
+chrome.storage.local.get(['captionSettings'], (result) => {
+  if (result.captionSettings) {
+    currentSettings = result.captionSettings;
+  }
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Content script received message:', message.action);
@@ -24,6 +36,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   if (message.action === 'hideOverlay') {
     hideOverlay();
+    sendResponse({ success: true });
+    return true;
+  }
+  
+  if (message.action === 'updateSettings') {
+    currentSettings = message.settings;
+    if (overlay) {
+      applySettings();
+    }
     sendResponse({ success: true });
     return true;
   }
@@ -67,7 +88,6 @@ function showLoadingState() {
     document.head.appendChild(style);
   }
   
-  // Fade in
   setTimeout(() => {
     overlay.style.opacity = '1';
   }, 10);
@@ -88,23 +108,44 @@ function displayText(text) {
 function createOverlay() {
   overlay = document.createElement('div');
   overlay.id = 'srutilekhak-overlay';
+  applySettings();
+  document.body.appendChild(overlay);
+}
+
+function applySettings() {
+  if (!overlay) return;
+  
+  const positions = {
+    'top-left': { top: '20px', left: '20px', bottom: 'auto', right: 'auto' },
+    'top-center': { top: '20px', left: '50%', bottom: 'auto', right: 'auto', transform: 'translateX(-50%)' },
+    'top-right': { top: '20px', right: '20px', bottom: 'auto', left: 'auto' },
+    'bottom-left': { bottom: '20px', left: '20px', top: 'auto', right: 'auto' },
+    'bottom-center': { bottom: '20px', left: '50%', top: 'auto', right: 'auto', transform: 'translateX(-50%)' },
+    'bottom-right': { bottom: '20px', right: '20px', top: 'auto', left: 'auto' }
+  };
+  
+  const pos = positions[currentSettings.position] || positions['bottom-left'];
+  const bgOpacity = (currentSettings.bgOpacity / 100).toFixed(2);
+  
   overlay.style.cssText = `
     position: fixed;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(0, 0, 0, 0.85);
+    ${pos.top ? `top: ${pos.top};` : ''}
+    ${pos.bottom ? `bottom: ${pos.bottom};` : ''}
+    ${pos.left ? `left: ${pos.left};` : ''}
+    ${pos.right ? `right: ${pos.right};` : ''}
+    ${pos.transform ? `transform: ${pos.transform};` : ''}
+    background: rgba(0, 0, 0, ${bgOpacity});
     color: white;
     padding: 12px 18px;
     border-radius: 8px;
-    font-family: Arial, sans-serif;
-    font-size: 16px;
+    font-family: ${currentSettings.fontFamily};
+    font-size: ${currentSettings.fontSize}px;
     z-index: 999999;
     max-width: 600px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     display: none;
     opacity: 0;
   `;
-  document.body.appendChild(overlay);
 }
 
 function hideOverlay() {

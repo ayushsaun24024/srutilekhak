@@ -4,8 +4,89 @@ document.addEventListener('DOMContentLoaded', async () => {
   const languageSelect = document.getElementById('language');
   const statusPill = document.getElementById('statusPill');
   const statusText = document.getElementById('statusText');
+  
+  const settingsToggle = document.getElementById('settingsToggle');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const fontSizeSlider = document.getElementById('fontSize');
+  const fontSizeValue = document.getElementById('fontSizeValue');
+  const fontFamilySelect = document.getElementById('fontFamily');
+  const bgOpacitySlider = document.getElementById('bgOpacity');
+  const bgOpacityValue = document.getElementById('bgOpacityValue');
+  const positionBtns = document.querySelectorAll('.position-btn');
+  const saveSettingsBtn = document.getElementById('saveSettings');
 
+  loadSettings();
   checkCurrentState();
+
+  settingsToggle.addEventListener('click', () => {
+    const isOpen = settingsPanel.style.display === 'block';
+    settingsPanel.style.display = isOpen ? 'none' : 'block';
+    settingsToggle.classList.toggle('active');
+  });
+
+  fontSizeSlider.addEventListener('input', (e) => {
+    fontSizeValue.textContent = e.target.value + 'px';
+  });
+
+  bgOpacitySlider.addEventListener('input', (e) => {
+    bgOpacityValue.textContent = e.target.value + '%';
+  });
+
+  positionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      positionBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  saveSettingsBtn.addEventListener('click', () => {
+    const activePosition = document.querySelector('.position-btn.active');
+    const settings = {
+      fontSize: fontSizeSlider.value,
+      fontFamily: fontFamilySelect.value,
+      bgOpacity: bgOpacitySlider.value,
+      position: activePosition ? activePosition.dataset.position : 'bottom-right'
+    };
+
+    chrome.storage.local.set({ captionSettings: settings }, () => {
+      saveSettingsBtn.textContent = '✓ Saved!';
+      saveSettingsBtn.style.background = 'rgba(16, 185, 129, 0.4)';
+      
+      setTimeout(() => {
+        saveSettingsBtn.textContent = 'Save Settings';
+        saveSettingsBtn.style.background = 'rgba(16, 185, 129, 0.2)';
+      }, 1500);
+      
+      chrome.storage.local.get(['activeTabId'], (result) => {
+        if (result.activeTabId) {
+          chrome.tabs.sendMessage(result.activeTabId, {
+            action: 'updateSettings',
+            settings: settings
+          }).catch(() => {});
+        }
+      });
+    });
+  });
+
+  function loadSettings() {
+    chrome.storage.local.get(['captionSettings'], (result) => {
+      if (result.captionSettings) {
+        const settings = result.captionSettings;
+        fontSizeSlider.value = settings.fontSize || 16;
+        fontSizeValue.textContent = (settings.fontSize || 16) + 'px';
+        fontFamilySelect.value = settings.fontFamily || 'Arial, sans-serif';
+        bgOpacitySlider.value = settings.bgOpacity || 85;
+        bgOpacityValue.textContent = (settings.bgOpacity || 85) + '%';
+        
+        positionBtns.forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.dataset.position === (settings.position || 'bottom-right')) {
+            btn.classList.add('active');
+          }
+        });
+      }
+    });
+  }
 
   startBtn.addEventListener('click', async () => {
     const language = languageSelect.value;
