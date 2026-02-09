@@ -53,7 +53,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleStartTranscription(message, sendResponse) {
   try {
-    // Prevent duplicate starts
     if (isCurrentlyTranscribing) {
       console.log('Already transcribing, ignoring duplicate start');
       sendResponse({ success: false, error: 'Already transcribing' });
@@ -62,43 +61,36 @@ async function handleStartTranscription(message, sendResponse) {
     
     console.log(`Starting transcription for tab ${message.tabId} in ${message.language}`);
     
-    const isDownloaded = await modelLoader.isModelDownloaded(message.language);
+    isCurrentlyTranscribing = true;
     
-    if (!isDownloaded) {
-      sendResponse({ 
-        success: false, 
-        error: 'Model not downloaded. Please download language pack first.' 
-      });
-      return;
+    const ready = await ensureContentScript(message.tabId);
+    if (ready) {
+      chrome.tabs.sendMessage(message.tabId, {
+        action: 'showLoading'
+      }).catch(err => console.log('Could not show loading:', err));
     }
     
-    isCurrentlyTranscribing = true; // SET STATE
-    
-    // Create offscreen document
     await setupOffscreenDocument();
     
-    // Load model in offscreen
     chrome.runtime.sendMessage({
       action: 'loadModel',
       language: message.language
     }, async (response) => {
       if (!response || !response.success) {
-        isCurrentlyTranscribing = false; // RESET STATE
+        isCurrentlyTranscribing = false;
         sendResponse({ success: false, error: 'Failed to load model' });
         return;
       }
       
       console.log('Model loaded, capturing tab audio...');
       
-      // Get stream ID for tab audio capture
       chrome.tabCapture.getMediaStreamId({ targetTabId: message.tabId }, (streamId) => {
         if (chrome.runtime.lastError) {
-          isCurrentlyTranscribing = false; // RESET STATE
+          isCurrentlyTranscribing = false;
           sendResponse({ success: false, error: chrome.runtime.lastError.message });
           return;
         }
         
-        // Tell offscreen to start capturing audio
         chrome.runtime.sendMessage({
           action: 'startAudioCapture',
           streamId: streamId
@@ -111,7 +103,7 @@ async function handleStartTranscription(message, sendResponse) {
             });
             sendResponse({ success: true });
           } else {
-            isCurrentlyTranscribing = false; // RESET STATE
+            isCurrentlyTranscribing = false;
             sendResponse({ success: false, error: 'Failed to start audio capture' });
           }
         });
@@ -120,7 +112,7 @@ async function handleStartTranscription(message, sendResponse) {
     
   } catch (error) {
     console.error('Start transcription error:', error);
-    isCurrentlyTranscribing = false; // RESET STATE
+    isCurrentlyTranscribing = false;
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -135,7 +127,7 @@ async function setupOffscreenDocument() {
     await chrome.offscreen.createDocument({
       url: 'offscreen/offscreen.html',
       reasons: ['USER_MEDIA'],
-      justification: 'Load and run Moonshine models'
+      justification: 'Load and run models'
     });
   }
 }
@@ -169,6 +161,16 @@ async function handleStopTranscription(message, sendResponse) {
   try {
     isCurrentlyTranscribing = false;
     
+    const { activeTabId } = await chrome.storage.local.get(['activeTabId']);
+    
+    // Hide overlay on tab
+    if (activeTabId) {
+      chrome.tabs.sendMessage(activeTabId, {
+        action: 'hideOverlay'
+      }).catch(err => console.log('Could not hide overlay:', err));
+    }
+    
+    // Stop audio capture in offscreen
     chrome.runtime.sendMessage({
       action: 'stopAudioCapture'
     }, (response) => {

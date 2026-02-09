@@ -1,6 +1,6 @@
-import MoonshineProcessor from '../utils/moonshineProcessor.js';
+import processor from '../utils/processor.js';
 
-const moonshine = new MoonshineProcessor();
+const processorModel = new processor();
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function loadModel(language, sendResponse) {
   try {
-    await moonshine.loadModel(language);
+    await processorModel.loadModel(language);
     sendResponse({ success: true });
   } catch (error) {
     console.error('Model load error:', error);
@@ -91,7 +91,7 @@ async function startAudioCapture(streamId, sendResponse) {
       
       audioChunks = [];
       let chunkCount = 0;
-      const maxChunksPerCycle = 4; // 20 seconds per cycle
+      const maxChunksPerCycle = 5; // 15 seconds per cycle (CHANGED from 4)
       
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0 && isRecording) {
@@ -100,8 +100,8 @@ async function startAudioCapture(streamId, sendResponse) {
           
           console.log(`Audio chunk: ${event.data.size} bytes, total chunks: ${audioChunks.length}`);
           
-          // Transcribe when we have 2+ chunks
-          if (!isTranscribing && audioChunks.length >= 2) {
+          // Transcribe when we have 1+ chunk (CHANGED from 2+ for faster response)
+          if (!isTranscribing && audioChunks.length >= 1) {
             isTranscribing = true;
             
             const fullBlob = new Blob([...audioChunks], { type: 'audio/webm' });
@@ -118,7 +118,7 @@ async function startAudioCapture(streamId, sendResponse) {
             });
           }
           
-          // After 4 chunks (20 seconds), stop and restart for fresh headers
+          // After 5 chunks (15 seconds), stop and restart for fresh headers
           if (chunkCount >= maxChunksPerCycle) {
             console.log('Cycle complete, restarting recorder for fresh headers');
             mediaRecorder.stop();
@@ -142,14 +142,14 @@ async function startAudioCapture(streamId, sendResponse) {
       
       mediaRecorder.start();
       
-      // Request data every 5 seconds
+      // Request data every 3 seconds (CHANGED from 5000 for faster updates)
       const chunkInterval = setInterval(() => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
           mediaRecorder.requestData();
         } else {
           clearInterval(chunkInterval);
         }
-      }, 5000);
+      }, 3000);
     };
     
     // Start the first recording cycle
@@ -206,7 +206,7 @@ async function transcribeAudio(audioData, sendResponse) {
     }
     
     console.log('Transcribing audio, data length:', audioData.length);
-    const text = await moonshine.transcribe(audioData);
+    const text = await processorModel.transcribe(audioData);
     
     if (text && text.trim().length > 0) {
       console.log('Transcription result:', text);

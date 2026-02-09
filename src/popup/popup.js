@@ -2,98 +2,69 @@ document.addEventListener('DOMContentLoaded', async () => {
   const startBtn = document.getElementById('start');
   const stopBtn = document.getElementById('stop');
   const languageSelect = document.getElementById('language');
-  const statusDiv = document.getElementById('status');
+  const statusPill = document.getElementById('statusPill');
+  const statusText = document.getElementById('statusText');
 
-  // Check if English model is downloaded
-  chrome.runtime.sendMessage(
-    { action: 'checkModel', language: 'en' },
-    (response) => {
-      if (response && response.downloaded) {
-        statusDiv.textContent = 'Ready - English model available';
-        statusDiv.style.backgroundColor = '#d4edda';
-      } else {
-        statusDiv.textContent = 'Downloading English model...';
-        statusDiv.style.backgroundColor = '#fff3cd';
-        downloadEnglishModel();
-      }
-    }
-  );
-});
+  updateStatus('ready', 'Ready to transcribe');
 
-async function downloadEnglishModel() {
-  const statusDiv = document.getElementById('status');
-  
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: 'downloadModel',
-      language: 'en'
-    });
+  startBtn.addEventListener('click', async () => {
+    const language = languageSelect.value;
     
-    if (response && response.success) {
-      statusDiv.textContent = 'Ready - English model downloaded';
-      statusDiv.style.backgroundColor = '#d4edda';
-    } else {
-      statusDiv.textContent = 'Error downloading model';
-      statusDiv.style.backgroundColor = '#f8d7da';
+    updateStatus('loading', 'Initializing...');
+    startBtn.disabled = true;
+    
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tabs[0]) {
+      updateStatus('ready', 'Ready to transcribe');
+      startBtn.disabled = false;
+      return;
     }
-  } catch (error) {
-    statusDiv.textContent = 'Error downloading model';
-    statusDiv.style.backgroundColor = '#f8d7da';
+
+    chrome.runtime.sendMessage({
+      action: 'startTranscription',
+      tabId: tabs[0].id,
+      language: language
+    }, (response) => {
+      if (response && response.success) {
+        updateStatus('transcribing', 'Transcribing live audio');
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'flex';
+      } else {
+        updateStatus('ready', 'Ready to transcribe');
+        startBtn.disabled = false;
+      }
+    });
+  });
+
+  stopBtn.addEventListener('click', () => {
+    updateStatus('loading', 'Stopping...');
+    stopBtn.disabled = true;
+    
+    chrome.runtime.sendMessage({
+      action: 'stopTranscription'
+    }, (response) => {
+      if (response && response.success) {
+        updateStatus('ready', 'Ready to transcribe');
+        stopBtn.style.display = 'none';
+        startBtn.style.display = 'flex';
+        startBtn.disabled = false;
+        stopBtn.disabled = false;
+      } else {
+        updateStatus('ready', 'Ready to transcribe');
+        stopBtn.disabled = false;
+      }
+    });
+  });
+
+  function updateStatus(state, message) {
+    statusText.textContent = message;
+    statusPill.className = 'status-pill';
+    
+    if (state === 'loading') {
+      statusPill.classList.add('loading');
+    } else if (state === 'transcribing') {
+      statusPill.classList.add('transcribing');
+    }
   }
-}
-
-document.getElementById('start').addEventListener('click', async () => {
-  const startBtn = document.getElementById('start');
-  const stopBtn = document.getElementById('stop');
-  const language = document.getElementById('language').value;
-  const statusDiv = document.getElementById('status');
-  
-  // Disable start button immediately
-  startBtn.disabled = true;
-  startBtn.style.opacity = '0.5';
-  
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  
-  chrome.runtime.sendMessage({
-    action: 'startTranscription',
-    tabId: tab.id,
-    language: language
-  }, (response) => {
-    if (response && response.success) {
-      statusDiv.textContent = 'Transcribing...';
-      statusDiv.style.backgroundColor = '#cfe2ff';
-      
-      // Enable stop button
-      stopBtn.disabled = false;
-      stopBtn.style.opacity = '1';
-    } else {
-      // Re-enable start button on error
-      startBtn.disabled = false;
-      startBtn.style.opacity = '1';
-      
-      statusDiv.textContent = 'Error: ' + (response ? response.error : 'Unknown error');
-      statusDiv.style.backgroundColor = '#f8d7da';
-    }
-  });
-});
-
-document.getElementById('stop').addEventListener('click', () => {
-  const startBtn = document.getElementById('start');
-  const stopBtn = document.getElementById('stop');
-  const statusDiv = document.getElementById('status');
-  
-  chrome.runtime.sendMessage({ action: 'stopTranscription' }, (response) => {
-    if (response && response.success) {
-      statusDiv.textContent = 'Stopped';
-      statusDiv.style.backgroundColor = '#fff3cd';
-      
-      // Re-enable start button
-      startBtn.disabled = false;
-      startBtn.style.opacity = '1';
-      
-      // Disable stop button
-      stopBtn.disabled = true;
-      stopBtn.style.opacity = '0.5';
-    }
-  });
 });

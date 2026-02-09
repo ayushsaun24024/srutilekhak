@@ -5,7 +5,7 @@ env.useBrowserCache = true;
 env.backends.onnx.wasm.numThreads = 1;
 env.backends.onnx.wasm.proxy = false;
 
-class MoonshineProcessor {
+class processor {
   constructor() {
     this.transcriber = null;
     this.isLoading = false;
@@ -86,4 +86,4 @@ class MoonshineProcessor {
   }
 }
 
-export default MoonshineProcessor;
+export default processor;
