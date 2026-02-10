@@ -3,6 +3,8 @@ let currentSettings = {
   fontSize: 16,
   fontFamily: 'Arial, sans-serif',
   bgOpacity: 85,
+  fontColor: '#FFFFFF',
+  bgColor: '#000000',
   position: 'bottom-left'
 };
 
@@ -126,6 +128,11 @@ function applySettings() {
   const pos = positions[currentSettings.position] || positions['bottom-left'];
   const bgOpacity = (currentSettings.bgOpacity / 100).toFixed(2);
   
+  const bgColor = currentSettings.bgColor || '#000000';
+  const r = parseInt(bgColor.slice(1, 3), 16);
+  const g = parseInt(bgColor.slice(3, 5), 16);
+  const b = parseInt(bgColor.slice(5, 7), 16);
+  
   overlay.style.cssText = `
     position: fixed;
     ${pos.top ? `top: ${pos.top};` : ''}
@@ -133,8 +140,8 @@ function applySettings() {
     ${pos.left ? `left: ${pos.left};` : ''}
     ${pos.right ? `right: ${pos.right};` : ''}
     ${pos.transform ? `transform: ${pos.transform};` : ''}
-    background: rgba(0, 0, 0, ${bgOpacity});
-    color: white;
+    background: rgba(${r}, ${g}, ${b}, ${bgOpacity});
+    color: ${currentSettings.fontColor || '#FFFFFF'};
     padding: 12px 18px;
     border-radius: 8px;
     font-family: ${currentSettings.fontFamily};

@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bgOpacityValue = document.getElementById('bgOpacityValue');
   const positionBtns = document.querySelectorAll('.position-btn');
   const saveSettingsBtn = document.getElementById('saveSettings');
+  const fontColorPicker = document.getElementById('fontColor');
+  const fontColorValue = document.getElementById('fontColorValue');
+  const bgColorPicker = document.getElementById('bgColor');
+  const bgColorValue = document.getElementById('bgColorValue');
 
   loadSettings();
   checkCurrentState();
@@ -32,6 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     bgOpacityValue.textContent = e.target.value + '%';
   });
 
+  fontColorPicker.addEventListener('input', (e) => {
+    fontColorValue.textContent = e.target.value.toUpperCase();
+  });
+
+  bgColorPicker.addEventListener('input', (e) => {
+    bgColorValue.textContent = e.target.value.toUpperCase();
+  });
+
   positionBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       positionBtns.forEach(b => b.classList.remove('active'));
@@ -45,6 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       fontSize: fontSizeSlider.value,
       fontFamily: fontFamilySelect.value,
       bgOpacity: bgOpacitySlider.value,
+      fontColor: document.getElementById('fontColor').value,
+      bgColor: document.getElementById('bgColor').value,
       position: activePosition ? activePosition.dataset.position : 'bottom-right'
     };
 
@@ -77,6 +91,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         fontFamilySelect.value = settings.fontFamily || 'Arial, sans-serif';
         bgOpacitySlider.value = settings.bgOpacity || 85;
         bgOpacityValue.textContent = (settings.bgOpacity || 85) + '%';
+        
+        const fontColor = settings.fontColor || '#FFFFFF';
+        const bgColor = settings.bgColor || '#000000';
+        document.getElementById('fontColor').value = fontColor;
+        document.getElementById('fontColorValue').textContent = fontColor;
+        document.getElementById('bgColor').value = bgColor;
+        document.getElementById('bgColorValue').textContent = bgColor;
         
         positionBtns.forEach(btn => {
           btn.classList.remove('active');
