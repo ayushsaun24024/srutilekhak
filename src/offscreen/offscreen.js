@@ -8,8 +8,6 @@ let audioContext = null; // ADD THIS
 let audioStream = null; // ADD THIS
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Offscreen received:', message.action);
-  
   if (message.action === 'loadModel') {
     loadModel(message.language, sendResponse);
     return true;
@@ -45,7 +43,6 @@ async function startAudioCapture(streamId, sendResponse) {
   try {
     // Prevent duplicate starts
     if (isRecording || mediaRecorder) {
-      console.log('Stopping existing capture before starting new one');
       await stopAudioCapture(() => {});
       await new Promise(resolve => setTimeout(resolve, 500));
     }
@@ -60,7 +57,6 @@ async function startAudioCapture(streamId, sendResponse) {
     });
     
     audioStream = stream;
-    console.log('Audio stream obtained');
     
     // Create audio element to play captured audio
     const audioElement = document.createElement('audio');
@@ -83,7 +79,6 @@ async function startAudioCapture(streamId, sendResponse) {
       if (!isRecording) return;
       
       recordingCycle++;
-      console.log(`Starting recording cycle ${recordingCycle}`);
       
       mediaRecorder = new MediaRecorder(destination.stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -98,7 +93,6 @@ async function startAudioCapture(streamId, sendResponse) {
           audioChunks.push(event.data);
           chunkCount++;
           
-          console.log(`Audio chunk: ${event.data.size} bytes, total chunks: ${audioChunks.length}`);
           
           // Transcribe when we have 1+ chunk (CHANGED from 2+ for faster response)
           if (!isTranscribing && audioChunks.length >= 1) {
@@ -120,7 +114,6 @@ async function startAudioCapture(streamId, sendResponse) {
           
           // After 5 chunks (15 seconds), stop and restart for fresh headers
           if (chunkCount >= maxChunksPerCycle) {
-            console.log('Cycle complete, restarting recorder for fresh headers');
             mediaRecorder.stop();
           }
         }
@@ -193,26 +186,21 @@ async function stopAudioCapture(sendResponse) {
   mediaRecorder = null;
   audioChunks = [];
   
-  console.log('Audio capture stopped');
   sendResponse({ success: true });
 }
 
 async function transcribeAudio(audioData, sendResponse) {
   try {
     if (!audioData || audioData.length < 1000) {
-      console.log('Audio data too short, skipping');
       sendResponse({ success: false, error: 'Audio too short' });
       return;
     }
     
-    console.log('Transcribing audio, data length:', audioData.length);
     const text = await processorModel.transcribe(audioData);
     
     if (text && text.trim().length > 0) {
-      console.log('Transcription result:', text);
       sendResponse({ success: true, text: text });
     } else {
-      console.log('Empty transcription result');
       sendResponse({ success: false, error: 'Empty result' });
     }
   } catch (error) {

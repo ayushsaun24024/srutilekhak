@@ -66,7 +66,6 @@ module.exports = (env) => {
             manifest.name = `${config.name_prefix}${manifest.name}`;
             
             fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-            console.log(`✓ Manifest updated: ${manifest.name}`);
           });
         }
       })(),

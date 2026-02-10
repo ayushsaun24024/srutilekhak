@@ -16,15 +16,12 @@ class processor {
     if (this.isLoading) return;
     
     this.isLoading = true;
-    console.log('Loading Whisper...');
-    
     try {
       this.transcriber = await pipeline(
         'automatic-speech-recognition',
         'Xenova/whisper-tiny.en'
       );
       
-      console.log('Whisper loaded');
     } catch (error) {
       console.error('Failed to load:', error);
       throw error;
@@ -53,7 +50,6 @@ class processor {
       const result = await this.transcriber(audioBuffer);
       
       const text = result.text.trim();
-      console.log('Transcription:', text);
       return text || '';
     } catch (error) {
       console.log('Chunk decode failed, skipping');

@@ -1,6 +1,14 @@
 import ModelLoader from '../utils/modelLoader.js';
 
-console.log('Śrutilekhak background service worker loaded');
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'toggle-transcription') {
+    handleToggleCommand();
+  }
+});
+
+async function handleToggleCommand() {
+  chrome.action.openPopup();
+}
 
 const modelLoader = new ModelLoader();
 let isCurrentlyTranscribing = false;
@@ -54,12 +62,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function handleStartTranscription(message, sendResponse) {
   try {
     if (isCurrentlyTranscribing) {
-      console.log('Already transcribing, ignoring duplicate start');
       sendResponse({ success: false, error: 'Already transcribing' });
       return;
     }
-    
-    console.log(`Starting transcription for tab ${message.tabId} in ${message.language}`);
     
     isCurrentlyTranscribing = true;
     
@@ -82,8 +87,6 @@ async function handleStartTranscription(message, sendResponse) {
         return;
       }
       
-      console.log('Model loaded, capturing tab audio...');
-      
       chrome.tabCapture.getMediaStreamId({ targetTabId: message.tabId }, (streamId) => {
         if (chrome.runtime.lastError) {
           isCurrentlyTranscribing = false;
@@ -96,7 +99,6 @@ async function handleStartTranscription(message, sendResponse) {
           streamId: streamId
         }, (captureResponse) => {
           if (captureResponse && captureResponse.success) {
-            console.log('Audio capture started');
             chrome.storage.local.set({ 
               activeTabId: message.tabId,
               isTranscribing: true 
@@ -153,7 +155,6 @@ async function handleDownloadModel(message, sendResponse) {
 }
 
 async function handleTranscribeAudio(message, sendResponse) {
-  console.log('Received audio chunk for transcription');
   sendResponse({ success: true });
 }
 
@@ -175,7 +176,6 @@ async function handleStopTranscription(message, sendResponse) {
       action: 'stopAudioCapture'
     }, (response) => {
       chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
-      console.log('Transcription stopped');
       sendResponse({ success: true });
     });
   } catch (error) {
@@ -191,8 +191,6 @@ async function handleProcessAudioBlob(message, sendResponse) {
       sendResponse({ success: false });
       return;
     }
-    
-    console.log('Processing audio blob...');
     
     // Send to offscreen for transcription
     chrome.runtime.sendMessage({
@@ -229,7 +227,6 @@ async function ensureContentScript(tabId) {
         target: { tabId: tabId },
         files: ['content/content.js']
       });
-      console.log('Content script injected');
       await new Promise(resolve => setTimeout(resolve, 200));
       return true;
     } catch (injectError) {
@@ -251,7 +248,6 @@ async function handleProcessTranscription(message, sendResponse) {
     // Ensure content script is ready
     const ready = await ensureContentScript(activeTabId);
     if (!ready) {
-      console.log('Content script not ready');
       sendResponse({ success: false });
       return;
     }

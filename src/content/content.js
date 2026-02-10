@@ -1,5 +1,3 @@
-console.log('Śrutilekhak content script loaded');
-
 let overlay = null;
 let currentSettings = {
   fontSize: 16,
@@ -15,8 +13,6 @@ chrome.storage.local.get(['captionSettings'], (result) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Content script received message:', message.action);
-  
   if (message.action === 'ping') {
     sendResponse({ success: true });
     return true;
@@ -51,7 +47,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function showLoadingState() {
-  console.log('Showing loading state');
   
   if (!overlay) {
     createOverlay();
@@ -94,8 +89,6 @@ function showLoadingState() {
 }
 
 function displayText(text) {
-  console.log('Displaying text:', text);
-  
   if (!overlay) {
     createOverlay();
   }
@@ -149,8 +142,6 @@ function applySettings() {
 }
 
 function hideOverlay() {
-  console.log('Hiding overlay');
-  
   if (overlay) {
     overlay.style.opacity = '0';
     setTimeout(() => {

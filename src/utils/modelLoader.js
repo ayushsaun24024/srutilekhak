@@ -10,7 +10,6 @@ class ModelLoader {
     try {
       const response = await fetch(chrome.runtime.getURL('models/manifest.json'));
       this.manifest = await response.json();
-      console.log('Manifest loaded:', this.manifest);
       return this.manifest;
     } catch (error) {
       console.error('Failed to load manifest:', error);
@@ -38,9 +37,6 @@ class ModelLoader {
       throw new Error(`Model for language ${language} not found`);
     }
 
-    console.log(`Downloading model for ${language}...`);
-    
-    // For now, just store the URLs (we'll download actual files later)
     await chrome.storage.local.set({
       [`model_${language}`]: {
         urls: modelInfo.files,
@@ -50,7 +46,6 @@ class ModelLoader {
       }
     });
 
-    console.log(`Model ${language} metadata saved`);
     return true;
   }
 
