@@ -47,6 +47,7 @@ module.exports = (env) => {
           { from: 'public/icons', to: 'icons' },
           { from: `config/config.${env.environment}.json`, to: 'config.json' },
           { from: 'src/popup/popup.html', to: 'popup/popup.html' },
+          { from: 'src/popup/popup.css', to: 'popup/popup.css' },
           { from: 'models/manifest.json', to: 'models/manifest.json' },
           { from: 'src/offscreen/offscreen.html', to: 'offscreen/offscreen.html' },
         ]
@@ -65,7 +66,6 @@ module.exports = (env) => {
             manifest.name = `${config.name_prefix}${manifest.name}`;
             
             fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-            console.log(`✓ Manifest updated: ${manifest.name}`);
           });
         }
       })(),
