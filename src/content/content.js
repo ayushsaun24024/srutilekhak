@@ -1,4 +1,7 @@
 let overlay = null;
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+let customPosition = null;
 let currentSettings = {
   fontSize: 16,
   fontFamily: 'Arial, sans-serif',
@@ -49,6 +52,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       overlay.textContent = '';
       overlay.style.display = 'none';
     }
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.action === 'resetCaptionPosition') {
+    customPosition = null;
+    chrome.storage.local.remove(['customCaptionPosition'], () => {
+      if (overlay) {
+        applySettings();
+      }
+    });
     sendResponse({ success: true });
     return true;
   }
@@ -119,7 +133,81 @@ function createOverlay() {
   overlay = document.createElement('div');
   overlay.id = 'srutilekhak-overlay';
   applySettings();
+  
+  overlay.addEventListener('mousedown', startDrag);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', stopDrag);
+  
+  overlay.addEventListener('touchstart', startDrag, { passive: false });
+  document.addEventListener('touchmove', drag, { passive: false });
+  document.addEventListener('touchend', stopDrag);
+  
   document.body.appendChild(overlay);
+  
+  chrome.storage.local.get(['customCaptionPosition'], (result) => {
+    if (result.customCaptionPosition) {
+      customPosition = result.customCaptionPosition;
+      applySettings();
+    }
+  });
+}
+
+function startDrag(e) {
+  if (e.target !== overlay) return;
+  
+  isDragging = true;
+  overlay.style.cursor = 'grabbing';
+  
+  const rect = overlay.getBoundingClientRect();
+  const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+  const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+  
+  dragOffset.x = clientX - rect.left;
+  dragOffset.y = clientY - rect.top;
+  
+  if (e.type.includes('touch')) {
+    e.preventDefault();
+  }
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  
+  const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+  const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+  
+  let newLeft = clientX - dragOffset.x;
+  let newTop = clientY - dragOffset.y;
+  
+  const maxLeft = window.innerWidth - overlay.offsetWidth;
+  const maxTop = window.innerHeight - overlay.offsetHeight;
+  
+  newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+  newTop = Math.max(0, Math.min(newTop, maxTop));
+  
+  overlay.style.left = newLeft + 'px';
+  overlay.style.top = newTop + 'px';
+  overlay.style.bottom = 'auto';
+  overlay.style.right = 'auto';
+  overlay.style.transform = 'none';
+  
+  if (e.type.includes('touch')) {
+    e.preventDefault();
+  }
+}
+
+function stopDrag(e) {
+  if (!isDragging) return;
+  
+  isDragging = false;
+  overlay.style.cursor = 'move';
+  
+  customPosition = {
+    top: parseInt(overlay.style.top),
+    left: parseInt(overlay.style.left)
+  };
+  
+  chrome.storage.local.set({ customCaptionPosition: customPosition });
 }
 
 function applySettings() {
@@ -134,7 +222,6 @@ function applySettings() {
     'bottom-right': { bottom: '20px', right: '20px', top: 'auto', left: 'auto' }
   };
   
-  const pos = positions[currentSettings.position] || positions['bottom-left'];
   const bgOpacity = (currentSettings.bgOpacity / 100).toFixed(2);
   
   const bgColor = currentSettings.bgColor || '#000000';
@@ -142,13 +229,30 @@ function applySettings() {
   const g = parseInt(bgColor.slice(3, 5), 16);
   const b = parseInt(bgColor.slice(5, 7), 16);
   
+  let positionStyles = '';
+  
+  if (customPosition) {
+    positionStyles = `
+      top: ${customPosition.top}px;
+      left: ${customPosition.left}px;
+      bottom: auto;
+      right: auto;
+      transform: none;
+    `;
+  } else {
+    const pos = positions[currentSettings.position] || positions['bottom-left'];
+    positionStyles = `
+      ${pos.top ? `top: ${pos.top};` : ''}
+      ${pos.bottom ? `bottom: ${pos.bottom};` : ''}
+      ${pos.left ? `left: ${pos.left};` : ''}
+      ${pos.right ? `right: ${pos.right};` : ''}
+      ${pos.transform ? `transform: ${pos.transform};` : ''}
+    `;
+  }
+  
   overlay.style.cssText = `
     position: fixed;
-    ${pos.top ? `top: ${pos.top};` : ''}
-    ${pos.bottom ? `bottom: ${pos.bottom};` : ''}
-    ${pos.left ? `left: ${pos.left};` : ''}
-    ${pos.right ? `right: ${pos.right};` : ''}
-    ${pos.transform ? `transform: ${pos.transform};` : ''}
+    ${positionStyles}
     background: rgba(${r}, ${g}, ${b}, ${bgOpacity});
     color: ${currentSettings.fontColor || '#FFFFFF'};
     padding: 12px 18px;
@@ -160,6 +264,8 @@ function applySettings() {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     display: none;
     opacity: 0;
+    cursor: move;
+    user-select: none;
   `;
 }
 
@@ -168,6 +274,13 @@ function hideOverlay() {
     overlay.style.opacity = '0';
     setTimeout(() => {
       if (overlay && overlay.parentNode) {
+        overlay.removeEventListener('mousedown', startDrag);
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', stopDrag);
+        overlay.removeEventListener('touchstart', startDrag);
+        document.removeEventListener('touchmove', drag);
+        document.removeEventListener('touchend', stopDrag);
+        
         overlay.parentNode.removeChild(overlay);
         overlay = null;
       }

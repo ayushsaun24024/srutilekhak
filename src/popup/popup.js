@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const bgColorPicker = document.getElementById('bgColor');
   const bgColorValue = document.getElementById('bgColorValue');
   const clearBtn = document.getElementById('clearCaptions');
+  const resetPositionBtn = document.getElementById('resetPosition');
 
   loadSettings();
   checkCurrentState();
@@ -39,6 +40,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         chrome.tabs.sendMessage(result.activeTabId, {
           action: 'clearCaptions'
         }).catch(() => {});
+      }
+    });
+  });
+
+  resetPositionBtn.addEventListener('click', () => {
+    chrome.storage.local.get(['activeTabId'], (result) => {
+      if (result.activeTabId) {
+        chrome.tabs.sendMessage(result.activeTabId, {
+          action: 'resetCaptionPosition'
+        }, () => {
+          resetPositionBtn.textContent = '✓ Position Reset!';
+          resetPositionBtn.style.background = 'rgba(16, 185, 129, 0.25)';
+          resetPositionBtn.style.color = '#10b981';
+          
+          setTimeout(() => {
+            resetPositionBtn.textContent = 'Reset Dragged Position';
+            resetPositionBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+            resetPositionBtn.style.color = '#f87171';
+          }, 1500);
+        });
       }
     });
   });
