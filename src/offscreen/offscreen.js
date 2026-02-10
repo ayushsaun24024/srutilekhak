@@ -1,6 +1,6 @@
-import MoonshineProcessor from '../utils/moonshineProcessor.js';
+import processor from '../utils/processor.js';
 
-const moonshine = new MoonshineProcessor();
+const processorModel = new processor();
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
@@ -8,8 +8,6 @@ let audioContext = null; // ADD THIS
 let audioStream = null; // ADD THIS
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Offscreen received:', message.action);
-  
   if (message.action === 'loadModel') {
     loadModel(message.language, sendResponse);
     return true;
@@ -33,7 +31,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function loadModel(language, sendResponse) {
   try {
-    await moonshine.loadModel(language);
+    await processorModel.loadModel(language);
     sendResponse({ success: true });
   } catch (error) {
     console.error('Model load error:', error);
@@ -43,9 +41,7 @@ async function loadModel(language, sendResponse) {
 
 async function startAudioCapture(streamId, sendResponse) {
   try {
-    // Prevent duplicate starts
     if (isRecording || mediaRecorder) {
-      console.log('Stopping existing capture before starting new one');
       await stopAudioCapture(() => {});
       await new Promise(resolve => setTimeout(resolve, 500));
     }
@@ -59,10 +55,16 @@ async function startAudioCapture(streamId, sendResponse) {
       }
     });
     
-    audioStream = stream;
-    console.log('Audio stream obtained');
+    const hasAudio = await detectAudioLevel(stream);
     
-    // Create audio element to play captured audio
+    if (!hasAudio) {
+      stream.getTracks().forEach(track => track.stop());
+      sendResponse({ success: false, error: 'NO_AUDIO_DETECTED' });
+      return;
+    }
+    
+    audioStream = stream;
+    
     const audioElement = document.createElement('audio');
     audioElement.srcObject = stream;
     audioElement.autoplay = true;
@@ -78,12 +80,10 @@ async function startAudioCapture(streamId, sendResponse) {
     let isTranscribing = false;
     let recordingCycle = 0;
     
-    // Function to start a fresh recording cycle
     const startRecordingCycle = () => {
       if (!isRecording) return;
       
       recordingCycle++;
-      console.log(`Starting recording cycle ${recordingCycle}`);
       
       mediaRecorder = new MediaRecorder(destination.stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -91,17 +91,14 @@ async function startAudioCapture(streamId, sendResponse) {
       
       audioChunks = [];
       let chunkCount = 0;
-      const maxChunksPerCycle = 4; // 20 seconds per cycle
+      const maxChunksPerCycle = 5;
       
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0 && isRecording) {
           audioChunks.push(event.data);
           chunkCount++;
           
-          console.log(`Audio chunk: ${event.data.size} bytes, total chunks: ${audioChunks.length}`);
-          
-          // Transcribe when we have 2+ chunks
-          if (!isTranscribing && audioChunks.length >= 2) {
+          if (!isTranscribing && audioChunks.length >= 1) {
             isTranscribing = true;
             
             const fullBlob = new Blob([...audioChunks], { type: 'audio/webm' });
@@ -118,9 +115,7 @@ async function startAudioCapture(streamId, sendResponse) {
             });
           }
           
-          // After 4 chunks (20 seconds), stop and restart for fresh headers
           if (chunkCount >= maxChunksPerCycle) {
-            console.log('Cycle complete, restarting recorder for fresh headers');
             mediaRecorder.stop();
           }
         }
@@ -128,7 +123,6 @@ async function startAudioCapture(streamId, sendResponse) {
       
       mediaRecorder.onstop = () => {
         if (isRecording) {
-          // Start a new recording cycle with fresh headers
           setTimeout(() => startRecordingCycle(), 100);
         }
       };
@@ -142,17 +136,15 @@ async function startAudioCapture(streamId, sendResponse) {
       
       mediaRecorder.start();
       
-      // Request data every 5 seconds
       const chunkInterval = setInterval(() => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
           mediaRecorder.requestData();
         } else {
           clearInterval(chunkInterval);
         }
-      }, 5000);
+      }, 3000);
     };
     
-    // Start the first recording cycle
     startRecordingCycle();
     
     sendResponse({ success: true });
@@ -193,26 +185,21 @@ async function stopAudioCapture(sendResponse) {
   mediaRecorder = null;
   audioChunks = [];
   
-  console.log('Audio capture stopped');
   sendResponse({ success: true });
 }
 
 async function transcribeAudio(audioData, sendResponse) {
   try {
     if (!audioData || audioData.length < 1000) {
-      console.log('Audio data too short, skipping');
       sendResponse({ success: false, error: 'Audio too short' });
       return;
     }
     
-    console.log('Transcribing audio, data length:', audioData.length);
-    const text = await moonshine.transcribe(audioData);
+    const text = await processorModel.transcribe(audioData);
     
     if (text && text.trim().length > 0) {
-      console.log('Transcription result:', text);
       sendResponse({ success: true, text: text });
     } else {
-      console.log('Empty transcription result');
       sendResponse({ success: false, error: 'Empty result' });
     }
   } catch (error) {
@@ -227,5 +214,34 @@ function blobToBase64(blob) {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
+  });
+}
+
+async function detectAudioLevel(stream) {
+  return new Promise((resolve) => {
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let checksCount = 0;
+    let hasAudio = false;
+    
+    const checkInterval = setInterval(() => {
+      analyser.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+      
+      if (average > 0.5) {
+        hasAudio = true;
+      }
+      
+      checksCount++;
+      if (checksCount >= 10) {
+        clearInterval(checkInterval);
+        audioContext.close();
+        resolve(hasAudio);
+      }
+    }, 100);
   });
 }

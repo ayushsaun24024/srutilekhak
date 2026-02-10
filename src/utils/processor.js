@@ -5,7 +5,7 @@ env.useBrowserCache = true;
 env.backends.onnx.wasm.numThreads = 1;
 env.backends.onnx.wasm.proxy = false;
 
-class MoonshineProcessor {
+class processor {
   constructor() {
     this.transcriber = null;
     this.isLoading = false;
@@ -16,15 +16,12 @@ class MoonshineProcessor {
     if (this.isLoading) return;
     
     this.isLoading = true;
-    console.log('Loading Whisper...');
-    
     try {
       this.transcriber = await pipeline(
         'automatic-speech-recognition',
         'Xenova/whisper-tiny.en'
       );
       
-      console.log('Whisper loaded');
     } catch (error) {
       console.error('Failed to load:', error);
       throw error;
@@ -53,7 +50,6 @@ class MoonshineProcessor {
       const result = await this.transcriber(audioBuffer);
       
       const text = result.text.trim();
-      console.log('Transcription:', text);
       return text || '';
     } catch (error) {
       console.log('Chunk decode failed, skipping');
@@ -86,4 +82,4 @@ class MoonshineProcessor {
   }
 }
 
-export default MoonshineProcessor;
+export default processor;
