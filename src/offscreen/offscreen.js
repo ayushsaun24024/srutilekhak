@@ -41,7 +41,6 @@ async function loadModel(language, sendResponse) {
 
 async function startAudioCapture(streamId, sendResponse) {
   try {
-    // Prevent duplicate starts
     if (isRecording || mediaRecorder) {
       await stopAudioCapture(() => {});
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -56,9 +55,16 @@ async function startAudioCapture(streamId, sendResponse) {
       }
     });
     
+    const hasAudio = await detectAudioLevel(stream);
+    
+    if (!hasAudio) {
+      stream.getTracks().forEach(track => track.stop());
+      sendResponse({ success: false, error: 'NO_AUDIO_DETECTED' });
+      return;
+    }
+    
     audioStream = stream;
     
-    // Create audio element to play captured audio
     const audioElement = document.createElement('audio');
     audioElement.srcObject = stream;
     audioElement.autoplay = true;
@@ -74,7 +80,6 @@ async function startAudioCapture(streamId, sendResponse) {
     let isTranscribing = false;
     let recordingCycle = 0;
     
-    // Function to start a fresh recording cycle
     const startRecordingCycle = () => {
       if (!isRecording) return;
       
@@ -86,15 +91,13 @@ async function startAudioCapture(streamId, sendResponse) {
       
       audioChunks = [];
       let chunkCount = 0;
-      const maxChunksPerCycle = 5; // 15 seconds per cycle (CHANGED from 4)
+      const maxChunksPerCycle = 5;
       
       mediaRecorder.ondataavailable = async (event) => {
         if (event.data.size > 0 && isRecording) {
           audioChunks.push(event.data);
           chunkCount++;
           
-          
-          // Transcribe when we have 1+ chunk (CHANGED from 2+ for faster response)
           if (!isTranscribing && audioChunks.length >= 1) {
             isTranscribing = true;
             
@@ -112,7 +115,6 @@ async function startAudioCapture(streamId, sendResponse) {
             });
           }
           
-          // After 5 chunks (15 seconds), stop and restart for fresh headers
           if (chunkCount >= maxChunksPerCycle) {
             mediaRecorder.stop();
           }
@@ -121,7 +123,6 @@ async function startAudioCapture(streamId, sendResponse) {
       
       mediaRecorder.onstop = () => {
         if (isRecording) {
-          // Start a new recording cycle with fresh headers
           setTimeout(() => startRecordingCycle(), 100);
         }
       };
@@ -135,7 +136,6 @@ async function startAudioCapture(streamId, sendResponse) {
       
       mediaRecorder.start();
       
-      // Request data every 3 seconds (CHANGED from 5000 for faster updates)
       const chunkInterval = setInterval(() => {
         if (mediaRecorder && mediaRecorder.state === 'recording') {
           mediaRecorder.requestData();
@@ -145,7 +145,6 @@ async function startAudioCapture(streamId, sendResponse) {
       }, 3000);
     };
     
-    // Start the first recording cycle
     startRecordingCycle();
     
     sendResponse({ success: true });
@@ -215,5 +214,34 @@ function blobToBase64(blob) {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
+  });
+}
+
+async function detectAudioLevel(stream) {
+  return new Promise((resolve) => {
+    const audioContext = new AudioContext();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let checksCount = 0;
+    let hasAudio = false;
+    
+    const checkInterval = setInterval(() => {
+      analyser.getByteFrequencyData(dataArray);
+      const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+      
+      if (average > 0.5) {
+        hasAudio = true;
+      }
+      
+      checksCount++;
+      if (checksCount >= 10) {
+        clearInterval(checkInterval);
+        audioContext.close();
+        resolve(hasAudio);
+      }
+    }, 100);
   });
 }

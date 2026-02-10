@@ -114,6 +114,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       } else {
         updateStatus('ready', 'Ready to transcribe');
         startBtn.disabled = false;
+        
+        if (response && response.error === 'NO_AUDIO_DETECTED') {
+          console.log('No audio playing in tab');
+        }
       }
     });
   });

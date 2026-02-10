@@ -83,6 +83,10 @@ async function handleStartTranscription(message, sendResponse) {
     }, async (response) => {
       if (!response || !response.success) {
         isCurrentlyTranscribing = false;
+        chrome.tabs.sendMessage(message.tabId, {
+          action: 'showWarning',
+          text: 'Failed to load transcription model'
+        }).catch(() => {});
         sendResponse({ success: false, error: 'Failed to load model' });
         return;
       }
@@ -90,6 +94,10 @@ async function handleStartTranscription(message, sendResponse) {
       chrome.tabCapture.getMediaStreamId({ targetTabId: message.tabId }, (streamId) => {
         if (chrome.runtime.lastError) {
           isCurrentlyTranscribing = false;
+          chrome.tabs.sendMessage(message.tabId, {
+            action: 'showWarning',
+            text: 'Could not capture tab audio'
+          }).catch(() => {});
           sendResponse({ success: false, error: chrome.runtime.lastError.message });
           return;
         }
@@ -106,7 +114,21 @@ async function handleStartTranscription(message, sendResponse) {
             sendResponse({ success: true });
           } else {
             isCurrentlyTranscribing = false;
-            sendResponse({ success: false, error: 'Failed to start audio capture' });
+            chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+            
+            if (captureResponse && captureResponse.error === 'NO_AUDIO_DETECTED') {
+              chrome.tabs.sendMessage(message.tabId, {
+                action: 'showWarning',
+                text: 'No audio detected in this tab'
+              }).catch(() => {});
+              sendResponse({ success: false, error: 'NO_AUDIO_DETECTED' });
+            } else {
+              chrome.tabs.sendMessage(message.tabId, {
+                action: 'showWarning',
+                text: 'Failed to start audio capture'
+              }).catch(() => {});
+              sendResponse({ success: false, error: 'Failed to start audio capture' });
+            }
           }
         });
       });
@@ -115,6 +137,11 @@ async function handleStartTranscription(message, sendResponse) {
   } catch (error) {
     console.error('Start transcription error:', error);
     isCurrentlyTranscribing = false;
+    chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+    chrome.tabs.sendMessage(message.tabId, {
+      action: 'showWarning',
+      text: 'Error starting transcription'
+    }).catch(() => {});
     sendResponse({ success: false, error: error.message });
   }
 }
@@ -164,14 +191,12 @@ async function handleStopTranscription(message, sendResponse) {
     
     const { activeTabId } = await chrome.storage.local.get(['activeTabId']);
     
-    // Hide overlay on tab
     if (activeTabId) {
       chrome.tabs.sendMessage(activeTabId, {
         action: 'hideOverlay'
       }).catch(err => console.log('Could not hide overlay:', err));
     }
     
-    // Stop audio capture in offscreen
     chrome.runtime.sendMessage({
       action: 'stopAudioCapture'
     }, (response) => {
@@ -179,6 +204,8 @@ async function handleStopTranscription(message, sendResponse) {
       sendResponse({ success: true });
     });
   } catch (error) {
+    isCurrentlyTranscribing = false;
+    chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
     sendResponse({ success: false, error: error.message });
   }
 }

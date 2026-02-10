@@ -17,6 +17,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
+
+  if (message.action === 'showWarning') {
+    showWarning(message.text, message.duration || 3000);
+    sendResponse({ success: true });
+    return true;
+  }
   
   if (message.action === 'showLoading') {
     showLoadingState();
@@ -151,4 +157,24 @@ function hideOverlay() {
       }
     }, 300);
   }
+}
+
+function showWarning(message, duration = 3000) {
+  if (!overlay) {
+    createOverlay();
+  }
+  
+  overlay.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 20px;">⚠️</span>
+      <span>${message}</span>
+    </div>
+  `;
+  
+  overlay.style.opacity = '1';
+  overlay.style.display = 'block';
+  
+  setTimeout(() => {
+    hideOverlay();
+  }, duration);
 }
