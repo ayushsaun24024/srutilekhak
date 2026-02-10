@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fontColorValue = document.getElementById('fontColorValue');
   const bgColorPicker = document.getElementById('bgColor');
   const bgColorValue = document.getElementById('bgColorValue');
+  const clearBtn = document.getElementById('clearCaptions');
 
   loadSettings();
   checkCurrentState();
@@ -30,6 +31,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   fontSizeSlider.addEventListener('input', (e) => {
     fontSizeValue.textContent = e.target.value + 'px';
+  });
+
+  clearBtn.addEventListener('click', () => {
+    chrome.storage.local.get(['activeTabId'], (result) => {
+      if (result.activeTabId) {
+        chrome.tabs.sendMessage(result.activeTabId, {
+          action: 'clearCaptions'
+        }).catch(() => {});
+      }
+    });
   });
 
   bgOpacitySlider.addEventListener('input', (e) => {
@@ -132,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateStatus('transcribing', 'Transcribing live audio');
         startBtn.style.display = 'none';
         stopBtn.style.display = 'flex';
+        clearBtn.style.display = 'flex';
       } else {
         updateStatus('ready', 'Ready to transcribe');
         startBtn.disabled = false;
@@ -153,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (response && response.success) {
         updateStatus('ready', 'Ready to transcribe');
         stopBtn.style.display = 'none';
+        clearBtn.style.display = 'none';
         startBtn.style.display = 'flex';
         startBtn.disabled = false;
         stopBtn.disabled = false;
@@ -171,11 +184,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateStatus('transcribing', 'Transcribing live audio');
         startBtn.style.display = 'none';
         stopBtn.style.display = 'flex';
+        clearBtn.style.display = 'flex';
         stopBtn.disabled = false;
       } else {
         updateStatus('ready', 'Ready to transcribe');
         startBtn.style.display = 'flex';
         stopBtn.style.display = 'none';
+        clearBtn.style.display = 'none';
         startBtn.disabled = false;
       }
     });

@@ -43,6 +43,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
+
+  if (message.action === 'clearCaptions') {
+    if (overlay) {
+      overlay.textContent = '';
+      overlay.style.display = 'none';
+    }
+    sendResponse({ success: true });
+    return true;
+  }
   
   if (message.action === 'updateSettings') {
     currentSettings = message.settings;
