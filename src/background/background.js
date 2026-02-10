@@ -59,6 +59,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
+function setBadge(isRecording) {
+  if (isRecording) {
+    chrome.action.setBadgeText({ text: '●' });
+    chrome.action.setBadgeBackgroundColor({ color: '#EF4444' });
+  } else {
+    chrome.action.setBadgeText({ text: '' });
+  }
+}
+
 async function handleStartTranscription(message, sendResponse) {
   try {
     if (isCurrentlyTranscribing) {
@@ -111,10 +120,12 @@ async function handleStartTranscription(message, sendResponse) {
               activeTabId: message.tabId,
               isTranscribing: true 
             });
+            setBadge(true);
             sendResponse({ success: true });
           } else {
             isCurrentlyTranscribing = false;
             chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+            setBadge(false);
             
             if (captureResponse && captureResponse.error === 'NO_AUDIO_DETECTED') {
               chrome.tabs.sendMessage(message.tabId, {
@@ -138,6 +149,7 @@ async function handleStartTranscription(message, sendResponse) {
     console.error('Start transcription error:', error);
     isCurrentlyTranscribing = false;
     chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+    setBadge(false);
     chrome.tabs.sendMessage(message.tabId, {
       action: 'showWarning',
       text: 'Error starting transcription'
@@ -201,11 +213,13 @@ async function handleStopTranscription(message, sendResponse) {
       action: 'stopAudioCapture'
     }, (response) => {
       chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+      setBadge(false);
       sendResponse({ success: true });
     });
   } catch (error) {
     isCurrentlyTranscribing = false;
     chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+    setBadge(false);
     sendResponse({ success: false, error: error.message });
   }
 }
