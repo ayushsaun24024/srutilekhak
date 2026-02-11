@@ -59,6 +59,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false;
 });
 
+chrome.tabs.onRemoved.addListener((tabId) => {
+  chrome.storage.local.get(['activeTabId', 'isTranscribing'], (result) => {
+    if (result.activeTabId === tabId && result.isTranscribing) {
+      isCurrentlyTranscribing = false;
+      
+      chrome.runtime.sendMessage({
+        action: 'stopAudioCapture'
+      }, () => {});
+      
+      chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+      setBadge(false);
+    }
+  });
+});
+
 function setBadge(isRecording) {
   if (isRecording) {
     chrome.action.setBadgeText({ text: '●' });
