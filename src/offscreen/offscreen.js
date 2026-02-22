@@ -4,8 +4,8 @@ const processorModel = new processor();
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
-let audioContext = null; // ADD THIS
-let audioStream = null; // ADD THIS
+let audioContext = null;
+let audioStream = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'loadModel') {
@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'startAudioCapture') {
-    startAudioCapture(message.streamId, sendResponse);
+    startAudioCapture(message.streamId, message.language, sendResponse);
     return true;
   }
   
@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'transcribeAudio') {
-    transcribeAudio(message.audioData, sendResponse);
+    transcribeAudio(message.audioData, message.language || 'en', sendResponse);
     return true;
   }
 });
@@ -39,12 +39,14 @@ async function loadModel(language, sendResponse) {
   }
 }
 
-async function startAudioCapture(streamId, sendResponse) {
+async function startAudioCapture(streamId, language, sendResponse) {
   try {
     if (isRecording || mediaRecorder) {
       await stopAudioCapture(() => {});
       await new Promise(resolve => setTimeout(resolve, 500));
     }
+
+    const chunkSize = ['en'].includes(language) ? 3000 : 5000;
     
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -104,7 +106,7 @@ async function startAudioCapture(streamId, sendResponse) {
             const fullBlob = new Blob([...audioChunks], { type: 'audio/webm' });
             const audioData = await blobToBase64(fullBlob);
             
-            transcribeAudio(audioData, (response) => {
+            transcribeAudio(audioData, language, (response) => {
               if (response.success && response.text) {
                 chrome.runtime.sendMessage({
                   action: 'processTranscription',
@@ -142,7 +144,7 @@ async function startAudioCapture(streamId, sendResponse) {
         } else {
           clearInterval(chunkInterval);
         }
-      }, 3000);
+      }, chunkSize);
     };
     
     startRecordingCycle();
@@ -166,13 +168,11 @@ async function stopAudioCapture(sendResponse) {
     }
   }
   
-  // Stop all audio tracks
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop());
     audioStream = null;
   }
   
-  // Close audio context
   if (audioContext && audioContext.state !== 'closed') {
     try {
       await audioContext.close();
@@ -188,14 +188,14 @@ async function stopAudioCapture(sendResponse) {
   sendResponse({ success: true });
 }
 
-async function transcribeAudio(audioData, sendResponse) {
+async function transcribeAudio(audioData, language, sendResponse) {
   try {
     if (!audioData || audioData.length < 1000) {
       sendResponse({ success: false, error: 'Audio too short' });
       return;
     }
     
-    const text = await processorModel.transcribe(audioData);
+    const text = await processorModel.transcribe(audioData, language);
     
     if (text && text.trim().length > 0) {
       sendResponse({ success: true, text: text });

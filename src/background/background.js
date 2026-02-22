@@ -128,7 +128,8 @@ async function handleStartTranscription(message, sendResponse) {
         
         chrome.runtime.sendMessage({
           action: 'startAudioCapture',
-          streamId: streamId
+          streamId: streamId,
+          language: message.language
         }, (captureResponse) => {
           if (captureResponse && captureResponse.success) {
             chrome.storage.local.set({ 
