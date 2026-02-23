@@ -37,7 +37,10 @@ class processor {
       'en': 'english',
       'es': 'spanish',
       'fr': 'french',
-      'de': 'german'
+      'de': 'german',
+      'hi': 'hindi',
+      'zh': 'chinese',
+      'ar': 'arabic'
     };
     return languages[code] || 'english';
   }
