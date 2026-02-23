@@ -40,7 +40,11 @@ class processor {
       'de': 'german',
       'hi': 'hindi',
       'zh': 'chinese',
-      'ar': 'arabic'
+      'ar': 'arabic',
+      'ja': 'japanese',
+      'ko': 'korean',
+      'pt': 'portuguese',
+      'ru': 'russian'
     };
     return languages[code] || 'english';
   }

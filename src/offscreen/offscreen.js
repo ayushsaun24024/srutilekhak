@@ -46,7 +46,7 @@ async function startAudioCapture(streamId, language, sendResponse) {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    const chunkSize = ['en'].includes(language) ? 3000 : 5000;
+    const chunkSize = ['en'].includes(language) ? 3000 : ['ja', 'ko', 'zh', 'hi'].includes(language) ? 6000 : 5000;
     
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
