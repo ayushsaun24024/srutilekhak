@@ -44,7 +44,11 @@ class processor {
       'ja': 'japanese',
       'ko': 'korean',
       'pt': 'portuguese',
-      'ru': 'russian'
+      'ru': 'russian',
+      'it': 'italian',
+      'nl': 'dutch',
+      'pl': 'polish',
+      'tr': 'turkish'
     };
     return languages[code] || 'english';
   }
