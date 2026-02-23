@@ -48,7 +48,13 @@ class processor {
       'it': 'italian',
       'nl': 'dutch',
       'pl': 'polish',
-      'tr': 'turkish'
+      'tr': 'turkish',
+      'sv': 'swedish',
+      'no': 'norwegian',
+      'da': 'danish',
+      'fi': 'finnish',
+      'id': 'indonesian',
+      'th': 'thai'
     };
     return languages[code] || 'english';
   }
