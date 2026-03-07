@@ -11,15 +11,17 @@ class processor {
     this.isLoading = false;
   }
   
-  async loadModel() {
-    if (this.transcriber) return;
+  async loadModel(language = 'en') {
+    if (this.isLoading) return;
+    this.transcriber = null;
     if (this.isLoading) return;
     
     this.isLoading = true;
+    const model = language === 'en' ? 'Xenova/whisper-tiny.en' : 'Xenova/whisper-small';
     try {
       this.transcriber = await pipeline(
         'automatic-speech-recognition',
-        'Xenova/whisper-tiny.en'
+        model
       );
       
     } catch (error) {
@@ -29,8 +31,35 @@ class processor {
       this.isLoading = false;
     }
   }
+
+  getLanguageName(code) {
+    const languages = {
+      'en': 'english',
+      'es': 'spanish',
+      'fr': 'french',
+      'de': 'german',
+      'hi': 'hindi',
+      'zh': 'chinese',
+      'ar': 'arabic',
+      'ja': 'japanese',
+      'ko': 'korean',
+      'pt': 'portuguese',
+      'ru': 'russian',
+      'it': 'italian',
+      'nl': 'dutch',
+      'pl': 'polish',
+      'tr': 'turkish',
+      'sv': 'swedish',
+      'no': 'norwegian',
+      'da': 'danish',
+      'fi': 'finnish',
+      'id': 'indonesian',
+      'th': 'thai'
+    };
+    return languages[code] || 'english';
+  }
   
-  async transcribe(audioData) {
+  async transcribe(audioData, language = 'en') {
     if (!this.transcriber) {
       throw new Error('Model not loaded');
     }
@@ -47,7 +76,10 @@ class processor {
         return '';
       }
       
-      const result = await this.transcriber(audioBuffer);
+      const result = await this.transcriber(audioBuffer, {
+        language: this.getLanguageName(language),
+        task: 'transcribe'
+      });
       
       const text = result.text.trim();
       return text || '';
