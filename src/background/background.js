@@ -68,7 +68,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
         action: 'stopAudioCapture'
       }, () => {});
       
-      chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+      chrome.storage.local.remove(['activeTabId', 'isTranscribing', 'activeLanguage']);
       setBadge(false);
     }
   });
@@ -128,18 +128,20 @@ async function handleStartTranscription(message, sendResponse) {
         
         chrome.runtime.sendMessage({
           action: 'startAudioCapture',
-          streamId: streamId
+          streamId: streamId,
+          language: message.language
         }, (captureResponse) => {
           if (captureResponse && captureResponse.success) {
             chrome.storage.local.set({ 
               activeTabId: message.tabId,
-              isTranscribing: true 
+              isTranscribing: true,
+              activeLanguage: message.language
             });
             setBadge(true);
             sendResponse({ success: true });
           } else {
             isCurrentlyTranscribing = false;
-            chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+            chrome.storage.local.remove(['activeTabId', 'isTranscribing', 'activeLanguage']);
             setBadge(false);
             
             if (captureResponse && captureResponse.error === 'NO_AUDIO_DETECTED') {
@@ -163,7 +165,7 @@ async function handleStartTranscription(message, sendResponse) {
   } catch (error) {
     console.error('Start transcription error:', error);
     isCurrentlyTranscribing = false;
-    chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+    chrome.storage.local.remove(['activeTabId', 'isTranscribing', 'activeLanguage']);
     setBadge(false);
     chrome.tabs.sendMessage(message.tabId, {
       action: 'showWarning',
@@ -227,13 +229,13 @@ async function handleStopTranscription(message, sendResponse) {
     chrome.runtime.sendMessage({
       action: 'stopAudioCapture'
     }, (response) => {
-      chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+      chrome.storage.local.remove(['activeTabId', 'isTranscribing', 'activeLanguage']);
       setBadge(false);
       sendResponse({ success: true });
     });
   } catch (error) {
     isCurrentlyTranscribing = false;
-    chrome.storage.local.remove(['activeTabId', 'isTranscribing']);
+    chrome.storage.local.remove(['activeTabId', 'isTranscribing', 'activeLanguage']);
     setBadge(false);
     sendResponse({ success: false, error: error.message });
   }
@@ -308,9 +310,11 @@ async function handleProcessTranscription(message, sendResponse) {
       return;
     }
     
+    const { activeLanguage } = await chrome.storage.local.get(['activeLanguage']);
     chrome.tabs.sendMessage(activeTabId, {
       action: 'displayTranscription',
-      text: message.text
+      text: message.text,
+      language: activeLanguage || 'en'
     }).catch((err) => {
       console.log('Failed to send to tab:', err);
     });

@@ -36,7 +36,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   if (message.action === 'displayTranscription') {
-    displayText(message.text);
+    displayText(message.text, message.language || 'en');
     sendResponse({ success: true });
     return true;
   }
@@ -119,11 +119,14 @@ function showLoadingState() {
   }, 10);
 }
 
-function displayText(text) {
+function displayText(text, language = 'en') {
   if (!overlay) {
     createOverlay();
   }
   
+  const rtlLanguages = ['ar'];
+  overlay.style.direction = rtlLanguages.includes(language) ? 'rtl' : 'ltr';
+  overlay.style.textAlign = rtlLanguages.includes(language) ? 'right' : 'left';
   overlay.textContent = text;
   overlay.style.opacity = '1';
   overlay.style.display = 'block';
