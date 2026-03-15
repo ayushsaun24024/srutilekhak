@@ -8,6 +8,7 @@
 </head>
 <body>
   <div class="container">
+
     <div class="hero-section">
       <div class="logo-area">
         <div class="logo-circle">
@@ -20,7 +21,6 @@
           <p class="tagline">Instant. Accurate. Private.</p>
         </div>
       </div>
-      
       <div class="status-pill" id="statusPill">
         <span class="pulse-dot"></span>
         <span id="statusText">Ready to transcribe</span>
@@ -28,13 +28,30 @@
     </div>
 
     <div class="main-content">
+
       <div class="language-selector">
         <div class="selector-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12.87 15.07L10.33 12.56L10.36 12.53C12.1 10.59 13.34 8.36 14.07 6H17V4H10V2H8V4H1V6H12.17C11.5 7.92 10.44 9.75 9 11.35C8.07 10.32 7.3 9.19 6.69 8H4.69C5.42 9.63 6.42 11.17 7.67 12.56L2.58 17.58L4 19L9 14L12.11 17.11L12.87 15.07ZM18.5 10H16.5L12 22H14L15.12 19H19.87L21 22H23L18.5 10ZM15.88 17L17.5 12.67L19.12 17H15.88Z" fill="currentColor"/>
           </svg>
-          <span>Language</span>
+          <span>Source Language</span>
         </div>
+
+        <div class="auto-detect-row">
+          <label class="toggle-label" for="autoDetect">Auto-detect language</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="autoDetect">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <div id="detectedLanguageBadge" class="detected-badge" style="display: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/>
+          </svg>
+          <span id="detectedLanguageText">Detecting…</span>
+        </div>
+
         <select id="language" class="language-select">
           <option value="en">English</option>
           <option value="es">Spanish</option>
@@ -57,8 +74,63 @@
           <option value="fi">Finnish</option>
           <option value="id">Indonesian</option>
           <option value="th">Thai</option>
+          <option value="ur">Urdu</option>
+          <option value="bn">Bengali</option>
+          <option value="vi">Vietnamese</option>
         </select>
+      </div>
+
+      <div class="translation-section">
+        <div class="selector-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 16l-4-4 4-4M17 8l4 4-4 4M14 4l-4 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Translate To</span>
+        </div>
+
+        <select id="translateTo" class="language-select">
+          <option value="">No translation</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="hi">Hindi</option>
+          <option value="zh">Chinese</option>
+          <option value="ar">Arabic</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="it">Italian</option>
+          <option value="nl">Dutch</option>
+          <option value="pl">Polish</option>
+          <option value="tr">Turkish</option>
+          <option value="id">Indonesian</option>
+          <option value="vi">Vietnamese</option>
+          <option value="ur">Urdu</option>
+          <option value="bn">Bengali</option>
         </select>
+
+        <div id="translationModelRow" class="translation-model-row" style="display: none;">
+          <div id="translationModelStatus" class="model-status-text"></div>
+          <button id="downloadTranslationModel" class="download-model-btn" style="display: none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M12 16l-6-6h4V4h4v6h4l-6 6zM4 20h16v-2H4v2z" fill="currentColor"/>
+            </svg>
+            <span id="downloadBtnLabel">Download Model</span>
+          </button>
+          <div id="translationModelProgress" class="model-progress-bar" style="display: none;">
+            <div id="translationModelProgressFill" class="model-progress-fill"></div>
+          </div>
+        </div>
+
+        <div id="displayModeRow" class="display-mode-row" style="display: none;">
+          <span class="display-mode-label">Show</span>
+          <div class="display-mode-toggle" id="displayModeToggle">
+            <button class="mode-btn active" data-mode="translation" id="modeTranslation">Translation</button>
+            <button class="mode-btn" data-mode="original" id="modeOriginal">Original</button>
+          </div>
+        </div>
       </div>
 
       <div class="action-area">
@@ -68,14 +140,14 @@
           </svg>
           <span>Start Transcription</span>
         </button>
-        
+
         <button id="stop" class="stop-btn" style="display: none;">
           <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
           </svg>
           <span>Stop Transcription</span>
         </button>
-        
+
         <button id="clearCaptions" class="clear-btn" style="display: none;">
           <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
@@ -146,23 +218,19 @@
               <button class="position-btn" data-position="bottom-center">↓</button>
               <button class="position-btn" data-position="bottom-right">↘</button>
             </div>
-            <button id="resetPosition" class="reset-position-btn">
-              Reset Dragged Position
-            </button>
+            <button id="resetPosition" class="reset-position-btn">Reset Dragged Position</button>
           </div>
 
-          <button id="saveSettings" class="save-settings-btn">
-            Save Settings
-          </button>
+          <button id="saveSettings" class="save-settings-btn">Save Settings</button>
         </div>
       </div>
     </div>
 
     <div class="footer">
-      <span class="version">v1.1.0</span>
+      <span class="version">v2.0.0</span>
     </div>
-  </div>
 
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

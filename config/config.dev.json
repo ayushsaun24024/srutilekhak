@@ -1,4 +1,5 @@
 {
+  "version": "2.0.0",
   "environment": "development",
   "name_prefix": "[DEV] ",
   "modelBaseUrl": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main",
