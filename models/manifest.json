@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
-  "models": {
-    "en": {
-      "name": "English",
+  "version": "2.0.0",
+  "whisper": {
+    "multilingual": {
+      "name": "Whisper Tiny Multilingual",
       "files": {
         "preprocess": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/preprocess.onnx",
         "encode": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/encode.onnx",
@@ -10,7 +10,27 @@
         "uncached_decode": "https://huggingface.co/ayushsaun/srutilekhak-models/resolve/main/tiny/uncached_decode.onnx"
       },
       "size": 285000000,
-      "version": "1.0.0"
+      "version": "2.0.0"
     }
+  },
+  "translation": {
+    "en-es": { "name": "English → Spanish", "modelId": "Xenova/opus-mt-en-es", "source": "en", "target": "es", "targetLabel": "Spanish", "size": 75000000, "version": "2.0.0" },
+    "en-fr": { "name": "English → French", "modelId": "Xenova/opus-mt-en-fr", "source": "en", "target": "fr", "targetLabel": "French", "size": 75000000, "version": "2.0.0" },
+    "en-de": { "name": "English → German", "modelId": "Xenova/opus-mt-en-de", "source": "en", "target": "de", "targetLabel": "German", "size": 75000000, "version": "2.0.0" },
+    "en-hi": { "name": "English → Hindi", "modelId": "Xenova/opus-mt-en-hi", "source": "en", "target": "hi", "targetLabel": "Hindi", "size": 75000000, "version": "2.0.0" },
+    "en-ar": { "name": "English → Arabic", "modelId": "Xenova/opus-mt-en-ar", "source": "en", "target": "ar", "targetLabel": "Arabic", "size": 75000000, "version": "2.0.0" },
+    "en-zh": { "name": "English → Chinese", "modelId": "Xenova/opus-mt-en-zh", "source": "en", "target": "zh", "targetLabel": "Chinese", "size": 75000000, "version": "2.0.0" },
+    "en-ru": { "name": "English → Russian", "modelId": "Xenova/opus-mt-en-ru", "source": "en", "target": "ru", "targetLabel": "Russian", "size": 75000000, "version": "2.0.0" },
+    "en-pt": { "name": "English → Portuguese", "modelId": "Xenova/opus-mt-en-pt", "source": "en", "target": "pt", "targetLabel": "Portuguese", "size": 75000000, "version": "2.0.0" },
+    "en-it": { "name": "English → Italian", "modelId": "Xenova/opus-mt-en-it", "source": "en", "target": "it", "targetLabel": "Italian", "size": 75000000, "version": "2.0.0" },
+    "en-nl": { "name": "English → Dutch", "modelId": "Xenova/opus-mt-en-nl", "source": "en", "target": "nl", "targetLabel": "Dutch", "size": 75000000, "version": "2.0.0" },
+    "en-pl": { "name": "English → Polish", "modelId": "Xenova/opus-mt-en-pl", "source": "en", "target": "pl", "targetLabel": "Polish", "size": 75000000, "version": "2.0.0" },
+    "en-tr": { "name": "English → Turkish", "modelId": "Xenova/opus-mt-en-tr", "source": "en", "target": "tr", "targetLabel": "Turkish", "size": 75000000, "version": "2.0.0" },
+    "en-ja": { "name": "English → Japanese", "modelId": "Xenova/opus-mt-en-jap", "source": "en", "target": "ja", "targetLabel": "Japanese", "size": 75000000, "version": "2.0.0" },
+    "en-ko": { "name": "English → Korean", "modelId": "Xenova/opus-mt-tc-big-en-ko", "source": "en", "target": "ko", "targetLabel": "Korean", "size": 300000000, "version": "2.0.0" },
+    "en-id": { "name": "English → Indonesian", "modelId": "Xenova/opus-mt-en-id", "source": "en", "target": "id", "targetLabel": "Indonesian", "size": 75000000, "version": "2.0.0" },
+    "en-vi": { "name": "English → Vietnamese", "modelId": "Xenova/opus-mt-en-vi", "source": "en", "target": "vi", "targetLabel": "Vietnamese", "size": 75000000, "version": "2.0.0" },
+    "en-ur": { "name": "English → Urdu", "modelId": "Xenova/opus-mt-en-ur", "source": "en", "target": "ur", "targetLabel": "Urdu", "size": 75000000, "version": "2.0.0" },
+    "en-bn": { "name": "English → Bengali", "modelId": "Xenova/opus-mt-en-bn", "source": "en", "target": "bn", "targetLabel": "Bengali", "size": 75000000, "version": "2.0.0" }
   }
 }
